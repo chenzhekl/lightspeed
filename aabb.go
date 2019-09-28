@@ -6,6 +6,10 @@ import (
 	"github.com/chenzhekl/lightspeed/math"
 )
 
+type IAABB interface {
+	AABB() AABB
+}
+
 // AABB is short for axis-alighed bounding box. It's the smallest box that contains the object.
 type AABB struct {
 	Min, Max math.Point3f
@@ -24,15 +28,25 @@ func (b AABB) String() string {
 	return fmt.Sprintf("{Min: %v, Max: %v}", b.Min, b.Max)
 }
 
-// Hit checks if the ray hits this AABB.
-func (b AABB) Hit(ray *Ray) bool {
+// AABB returns self.
+func (b AABB) AABB() AABB {
+	return b
+}
+
+// Union returns the union of two AABB.
+func (b AABB) Union(other AABB) AABB {
+	return NewAABB(b.Min.Min(other.Min), b.Max.Max(other.Max))
+}
+
+// Intersect checks if a ray hits this AABB.
+func (b AABB) Intersect(ray *Ray) bool {
 	intervalMin := ray.TMin
 	intervalMax := ray.TMax
 
 	var tMin, tMax math.Float
-	tMin = (b.Min.X - ray.Origin.X) * ray.directionInv.X
-	tMax = (b.Max.X - ray.Origin.X) * ray.directionInv.X
-	if ray.directionInv.X < 0.0 {
+	tMin = (b.Min.X() - ray.Origin.X()) * ray.DirectionInv().X()
+	tMax = (b.Max.X() - ray.Origin.X()) * ray.DirectionInv().X()
+	if ray.DirectionInv().X() < 0.0 {
 		tMin, tMax = tMax, tMin
 	}
 	if tMin > intervalMin {
@@ -45,9 +59,9 @@ func (b AABB) Hit(ray *Ray) bool {
 		return false
 	}
 
-	tMin = (b.Min.Y - ray.Origin.Y) * ray.directionInv.Y
-	tMax = (b.Max.Y - ray.Origin.Y) * ray.directionInv.Y
-	if ray.directionInv.Y < 0.0 {
+	tMin = (b.Min.Y() - ray.Origin.Y()) * ray.DirectionInv().Y()
+	tMax = (b.Max.Y() - ray.Origin.Y()) * ray.DirectionInv().Y()
+	if ray.DirectionInv().Y() < 0.0 {
 		tMin, tMax = tMax, tMin
 	}
 	if tMin > intervalMin {
@@ -60,9 +74,9 @@ func (b AABB) Hit(ray *Ray) bool {
 		return false
 	}
 
-	tMin = (b.Min.Z - ray.Origin.Z) * ray.directionInv.Z
-	tMax = (b.Max.Z - ray.Origin.Z) * ray.directionInv.Z
-	if ray.directionInv.Z < 0.0 {
+	tMin = (b.Min.Z() - ray.Origin.Z()) * ray.DirectionInv().Z()
+	tMax = (b.Max.Z() - ray.Origin.Z()) * ray.DirectionInv().Z()
+	if ray.DirectionInv().Z() < 0.0 {
 		tMin, tMax = tMax, tMin
 	}
 	if tMin > intervalMin {
